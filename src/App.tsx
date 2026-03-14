@@ -22,22 +22,22 @@ const PRICING_PLANS: PricingPlan[] = [
   {
     id: 'brief',
     name: 'Basic Brief',
-    price: '0.5',
-    tagline: 'Fast positioning snapshot',
+    price: '0',
+    tagline: 'Free positioning snapshot',
     deliverable: 'Short market angle, target user, and three judge-friendly talking points.',
   },
   {
     id: 'analysis',
     name: 'Market Analysis',
-    price: '1',
-    tagline: 'Best demo default',
+    price: '0',
+    tagline: 'Free standard demo',
     deliverable: 'Structured analysis with monetization logic, positioning, and launch recommendations.',
   },
   {
     id: 'memo',
     name: 'Investor Memo',
-    price: '2',
-    tagline: 'Deepest premium output',
+    price: '0',
+    tagline: 'Free deep dive',
     deliverable: 'Long-form memo with moat, GTM path, risks, and next-step roadmap.',
   },
 ]
@@ -74,6 +74,10 @@ function App() {
   }, [selectedPlanId])
 
   useEffect(() => {
+    if (selectedPlan.price === '0') {
+      return
+    }
+
     const orderId = goatx402.order?.orderId
     const orderStatus = goatx402.orderStatus?.status
 
@@ -146,6 +150,38 @@ function App() {
     setReport(null)
     setReportError(null)
     lastGeneratedOrderId.current = null
+
+    if (Number(amount) === 0) {
+      setReportLoading(true)
+      try {
+        const response = await fetch(`${config.apiUrl}/agent/free-report`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            topic,
+            objective,
+            aiConfig: {
+              baseUrl: aiSettings.settings.baseUrl,
+              apiKey: aiSettings.settings.apiKey,
+              model: aiSettings.settings.model,
+            },
+          }),
+        })
+
+        const data = (await response.json()) as ReportResponse | { error?: string }
+        if (!response.ok) {
+          throw new Error('error' in data ? data.error || `HTTP ${response.status}` : `HTTP ${response.status}`)
+        }
+
+        setReport(data as ReportResponse)
+      } catch (error) {
+        setReportError(error instanceof Error ? error.message : 'Failed to generate report')
+      } finally {
+        setReportLoading(false)
+      }
+      return
+    }
+
     await goatx402.pay({ chainId, tokenContract, tokenSymbol, amount, callbackCalldata })
   }
 
@@ -183,7 +219,9 @@ function App() {
               </div>
               <div>
                 <div className="text-stone-500">Current offer</div>
-                <div className="font-medium text-stone-100">{selectedPlan.name} for {selectedPlan.price} USDC/USDT</div>
+                <div className="font-medium text-stone-100">
+                  {selectedPlan.name} {selectedPlan.price === '0' ? '(Free)' : `for ${selectedPlan.price} USDC/USDT`}
+                </div>
               </div>
             </div>
           </div>
@@ -354,7 +392,9 @@ function App() {
             <div>
               <h2 className="text-2xl font-semibold text-stone-50">2. Unlock the report</h2>
               <p className="mt-2 text-sm leading-6 text-stone-400">
-                The backend only releases this section after the order reaches <span className="font-mono text-amber-300">PAYMENT_CONFIRMED</span>.
+                {selectedPlan.price === '0'
+                  ? 'Free mode is active, so the report unlocks immediately after generation.'
+                  : <>The backend only releases this section after the order reaches <span className="font-mono text-amber-300">PAYMENT_CONFIRMED</span>.</>}
               </p>
             </div>
             {reportLoading && (

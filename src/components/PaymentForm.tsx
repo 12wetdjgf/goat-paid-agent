@@ -81,11 +81,14 @@ export function PaymentForm({
 
   const selectedChain = chains.find((entry) => entry.chainId === selectedChainId)
   const isWrongChain = currentChainId !== null && currentChainId !== selectedChainId
+  const isFree = Number(amount) === 0
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     if (!selectedChainId || !selectedToken || !amount || Number(amount) <= 0) {
-      return
+      if (!isFree || !selectedChainId || !selectedToken) {
+        return
+      }
     }
 
     onPay(
@@ -106,7 +109,9 @@ export function PaymentForm({
       <div className="mb-5">
         <h2 className="text-2xl font-semibold text-stone-50">Pay to unlock</h2>
         <p className="mt-2 text-sm leading-6 text-stone-400">
-          This section creates the x402 order and sends the payment from MetaMask.
+          {isFree
+            ? 'Free mode is active. The app will unlock the report directly without sending an on-chain payment.'
+            : 'This section creates the x402 order and sends the payment from MetaMask.'}
         </p>
       </div>
 
@@ -226,10 +231,16 @@ export function PaymentForm({
 
           <button
             type="submit"
-            disabled={!isConnected || loading || isWrongChain || !selectedToken || Number(amount) <= 0}
+            disabled={loading || (!isFree && (!isConnected || isWrongChain)) || !selectedToken || Number(amount) < 0}
             className="w-full rounded-2xl bg-amber-400 px-4 py-4 text-sm font-semibold text-stone-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
           >
-            {loading ? 'Creating x402 payment...' : `Pay ${amount || '0'} ${selectedToken?.symbol || ''}`}
+            {loading
+              ? isFree
+                ? 'Generating free report...'
+                : 'Creating x402 payment...'
+              : isFree
+                ? 'Generate report for free'
+                : `Pay ${amount || '0'} ${selectedToken?.symbol || ''}`}
           </button>
         </form>
       )}

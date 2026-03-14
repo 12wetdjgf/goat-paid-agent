@@ -298,6 +298,35 @@ app.post('/api/agent/report', async (req, res) => {
   }
 })
 
+app.post('/api/agent/free-report', async (req, res) => {
+  try {
+    const { topic, objective, aiConfig } = req.body as {
+      topic?: string
+      objective?: string
+      aiConfig?: Partial<AiSettings>
+    }
+
+    if (!topic?.trim()) {
+      return res.status(400).json({ error: 'topic is required' })
+    }
+
+    const report = await generateAiReport(topic.trim(), objective?.trim(), aiConfig)
+
+    res.json({
+      orderId: null,
+      topic: topic.trim(),
+      objective: objective?.trim() || null,
+      status: 'FREE_UNLOCKED',
+      txHash: null,
+      report,
+    })
+  } catch (error) {
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'Failed to generate report',
+    })
+  }
+})
+
 app.listen(port, () => {
   console.log(`GOAT Paid Agent server running at http://localhost:${port}`)
 
