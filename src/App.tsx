@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ConnectWallet } from './components/ConnectWallet'
 import { PaymentForm } from './components/PaymentForm'
+import type { PricingPlan } from './components/PaymentForm'
 import { PaymentStatus } from './components/PaymentStatus'
 import { config } from './config'
 import { useAiSettings } from './hooks/useAiSettings'
@@ -17,6 +18,30 @@ type ReportResponse = {
   report: string
 }
 
+const PRICING_PLANS: PricingPlan[] = [
+  {
+    id: 'brief',
+    name: 'Basic Brief',
+    price: '0.5',
+    tagline: 'Fast positioning snapshot',
+    deliverable: 'Short market angle, target user, and three judge-friendly talking points.',
+  },
+  {
+    id: 'analysis',
+    name: 'Market Analysis',
+    price: '1',
+    tagline: 'Best demo default',
+    deliverable: 'Structured analysis with monetization logic, positioning, and launch recommendations.',
+  },
+  {
+    id: 'memo',
+    name: 'Investor Memo',
+    price: '2',
+    tagline: 'Deepest premium output',
+    deliverable: 'Long-form memo with moat, GTM path, risks, and next-step roadmap.',
+  },
+]
+
 function App() {
   const wallet = useWallet()
   const goatx402 = useGoatX402(wallet.signer)
@@ -29,11 +54,24 @@ function App() {
   const [objective, setObjective] = useState(
     'Summarize the product angle, monetization logic, and 3 demo talking points for judges.'
   )
+  const [selectedPlanId, setSelectedPlanId] = useState<string>('analysis')
   const [balance, setBalance] = useState<string | null>(null)
   const [report, setReport] = useState<ReportResponse | null>(null)
   const [reportLoading, setReportLoading] = useState(false)
   const [reportError, setReportError] = useState<string | null>(null)
   const lastGeneratedOrderId = useRef<string | null>(null)
+
+  const selectedPlan = PRICING_PLANS.find((plan) => plan.id === selectedPlanId) || PRICING_PLANS[1]
+
+  useEffect(() => {
+    if (selectedPlanId === 'brief') {
+      setObjective('Give me a concise launch summary, target user, and three memorable demo points.')
+    } else if (selectedPlanId === 'analysis') {
+      setObjective('Summarize the product angle, monetization logic, and 3 demo talking points for judges.')
+    } else if (selectedPlanId === 'memo') {
+      setObjective('Write an investor-style memo with positioning, business model, moat, risks, and roadmap.')
+    }
+  }, [selectedPlanId])
 
   useEffect(() => {
     const orderId = goatx402.order?.orderId
@@ -143,6 +181,10 @@ function App() {
                 <div className="text-stone-500">ERC-8004 contract</div>
                 <div className="font-mono text-xs text-amber-300">0x556089008Fc0a60cD09390Eca93477ca254A5522</div>
               </div>
+              <div>
+                <div className="text-stone-500">Current offer</div>
+                <div className="font-medium text-stone-100">{selectedPlan.name} for {selectedPlan.price} USDC/USDT</div>
+              </div>
             </div>
           </div>
         </div>
@@ -250,9 +292,9 @@ function App() {
 
             <div className="mt-6 grid gap-4 md:grid-cols-3">
               {[
-                'Pay once to unlock an investor-style brief',
+                `${selectedPlan.name}: ${selectedPlan.deliverable}`,
                 'Use GOAT Testnet3 USDC or USDT as the payment rail',
-                'Register the same app as an ERC-8004 agent identity',
+                'Registered as an ERC-8004 on-chain agent identity',
               ].map((item) => (
                 <div key={item} className="rounded-2xl border border-stone-800 bg-stone-950/70 p-4 text-sm text-stone-300">
                   {item}
@@ -279,6 +321,9 @@ function App() {
                 isConnected={wallet.isConnected}
                 loading={goatx402.loading}
                 balance={balance}
+                plans={PRICING_PLANS}
+                selectedPlanId={selectedPlanId}
+                onPlanChange={setSelectedPlanId}
                 onPay={handlePay}
                 onTokenChange={handleTokenChange}
               />
@@ -361,6 +406,13 @@ function App() {
                 </div>
               </div>
 
+              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+                <div className="text-xs uppercase tracking-[0.2em] text-emerald-300">Unlocked deliverable</div>
+                <div className="mt-2 text-sm text-stone-200">
+                  {selectedPlan.name}: {selectedPlan.deliverable}
+                </div>
+              </div>
+
               <article className="overflow-x-auto rounded-2xl border border-stone-800 bg-black/30 p-6">
                 <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-7 text-stone-200">
                   {report.report}
@@ -372,21 +424,42 @@ function App() {
 
         <section className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-3xl border border-stone-800 bg-stone-900/80 p-6">
-            <h2 className="text-xl font-semibold text-stone-50">3. ERC-8004 registration</h2>
+            <h2 className="text-xl font-semibold text-stone-50">3. On-chain identity</h2>
             <p className="mt-3 text-sm leading-6 text-stone-400">
-              Edit the metadata file in <span className="font-mono text-stone-200">public/agent-metadata.json</span>, host it
-              at a public URL, then submit that URL through the official GOAT registration page.
+              This agent already exposes a public metadata file and a registered GOAT Testnet3 identity.
             </p>
-            <div className="mt-4 rounded-2xl border border-stone-800 bg-stone-950/60 p-4 text-sm text-stone-300">
-              Suggested metadata URL after deployment:
-              <div className="mt-2 font-mono text-xs text-amber-300">
-                {merchantConfig?.publicAppUrl || 'http://localhost:3000'}/agent-metadata.json
+            <div className="mt-4 grid gap-4">
+              <div className="rounded-2xl border border-stone-800 bg-stone-950/60 p-4 text-sm text-stone-300">
+                <div className="text-xs uppercase tracking-[0.2em] text-stone-500">Agent name</div>
+                <div className="mt-2 text-stone-100">goat_paid_agent</div>
               </div>
-            </div>
-            <div className="mt-4 rounded-2xl border border-stone-800 bg-stone-950/60 p-4 text-sm text-stone-300">
-              GOAT Testnet3 registration contract:
-              <div className="mt-2 font-mono text-xs text-amber-300">
-                {merchantConfig?.registration.contractAddress || '0x556089008Fc0a60cD09390Eca93477ca254A5522'}
+              <div className="rounded-2xl border border-stone-800 bg-stone-950/60 p-4 text-sm text-stone-300">
+                <div className="text-xs uppercase tracking-[0.2em] text-stone-500">Wallet</div>
+                <div className="mt-2 break-all font-mono text-xs text-amber-300">
+                  0x70DF7CE612969eCF39724256246169cFB8eCf98F
+                </div>
+              </div>
+              <div className="rounded-2xl border border-stone-800 bg-stone-950/60 p-4 text-sm text-stone-300">
+                <div className="text-xs uppercase tracking-[0.2em] text-stone-500">Metadata URL</div>
+                <a
+                  className="mt-2 block break-all font-mono text-xs text-amber-300 hover:text-amber-200"
+                  href={`${merchantConfig?.publicAppUrl || 'https://goat-paid-agent.vercel.app'}/agent-metadata.json`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {(merchantConfig?.publicAppUrl || 'https://goat-paid-agent.vercel.app')}/agent-metadata.json
+                </a>
+              </div>
+              <div className="rounded-2xl border border-stone-800 bg-stone-950/60 p-4 text-sm text-stone-300">
+                <div className="text-xs uppercase tracking-[0.2em] text-stone-500">ERC-8004 registration tx</div>
+                <a
+                  className="mt-2 block break-all font-mono text-xs text-amber-300 hover:text-amber-200"
+                  href="https://explorer.testnet3.goat.network/tx/0xcaf4150febe9d8c9119aa8dd4c1d41b476fc9a8472a05edc442e6b9967ebd634"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  0xcaf4150febe9d8c9119aa8dd4c1d41b476fc9a8472a05edc442e6b9967ebd634
+                </a>
               </div>
             </div>
           </div>

@@ -45,13 +45,35 @@ export function PaymentStatus({ order, result, status, error, onReset }: Payment
     return chain ? `${chain.explorerUrl}/tx/${txHash}` : null
   }
 
+  async function copyProof() {
+    const proof = [
+      order ? `orderId=${order.orderId}` : '',
+      status ? `status=${status.status}` : '',
+      status?.txHash ? `txHash=${status.txHash}` : result?.txHash ? `txHash=${result.txHash}` : '',
+      order ? `amount=${order.amountWei}` : '',
+      order ? `token=${order.tokenSymbol}` : '',
+      order ? `recipient=${order.payToAddress}` : '',
+    ]
+      .filter(Boolean)
+      .join('\n')
+
+    await navigator.clipboard.writeText(proof)
+  }
+
   return (
     <div className="rounded-3xl border border-stone-800 bg-stone-900/80 p-6 text-stone-100">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-2xl font-semibold text-stone-50">Payment state</h2>
-        <button onClick={onReset} className="text-sm text-amber-300 hover:text-amber-200">
-          Reset
-        </button>
+        <div className="flex items-center gap-3">
+          {(order || status || result) && (
+            <button onClick={() => void copyProof()} className="text-sm text-stone-300 hover:text-stone-100">
+              Copy proof
+            </button>
+          )}
+          <button onClick={onReset} className="text-sm text-amber-300 hover:text-amber-200">
+            Reset
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -124,6 +146,21 @@ export function PaymentStatus({ order, result, status, error, onReset }: Payment
                   {status.txHash}
                 </a>
               )}
+
+              <div className="mt-4 grid gap-3 md:grid-cols-3">
+                <div className="rounded-xl border border-stone-800 bg-black/30 p-3">
+                  <div className="text-[10px] uppercase tracking-[0.2em] text-stone-500">Proof type</div>
+                  <div className="mt-1 text-xs text-stone-200">x402 payment receipt</div>
+                </div>
+                <div className="rounded-xl border border-stone-800 bg-black/30 p-3">
+                  <div className="text-[10px] uppercase tracking-[0.2em] text-stone-500">Payer</div>
+                  <div className="mt-1 break-all font-mono text-[11px] text-stone-200">{status.fromAddress}</div>
+                </div>
+                <div className="rounded-xl border border-stone-800 bg-black/30 p-3">
+                  <div className="text-[10px] uppercase tracking-[0.2em] text-stone-500">Token</div>
+                  <div className="mt-1 text-xs text-stone-200">{status.tokenSymbol}</div>
+                </div>
+              </div>
             </div>
           )}
         </div>

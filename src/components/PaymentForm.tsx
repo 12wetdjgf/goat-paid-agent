@@ -1,12 +1,23 @@
 import { useEffect, useState } from 'react'
 import type { ChainInfo, TokenInfo } from '../hooks/useConfig'
 
+export interface PricingPlan {
+  id: string
+  name: string
+  price: string
+  tagline: string
+  deliverable: string
+}
+
 interface PaymentFormProps {
   chains: ChainInfo[]
   currentChainId: number | null
   isConnected: boolean
   loading: boolean
   balance: string | null
+  plans: PricingPlan[]
+  selectedPlanId: string
+  onPlanChange: (planId: string) => void
   onPay: (
     chainId: number,
     tokenContract: string,
@@ -23,6 +34,9 @@ export function PaymentForm({
   isConnected,
   loading,
   balance,
+  plans,
+  selectedPlanId,
+  onPlanChange,
   onPay,
   onTokenChange,
 }: PaymentFormProps) {
@@ -31,6 +45,13 @@ export function PaymentForm({
   const [amount, setAmount] = useState('1')
   const [callbackCalldata, setCallbackCalldata] = useState('')
   const [showCalldata, setShowCalldata] = useState(false)
+
+  useEffect(() => {
+    const activePlan = plans.find((plan) => plan.id === selectedPlanId)
+    if (activePlan) {
+      setAmount(activePlan.price)
+    }
+  }, [plans, selectedPlanId])
 
   useEffect(() => {
     if (chains.length > 0 && selectedChainId === null) {
@@ -95,6 +116,35 @@ export function PaymentForm({
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <span className="mb-2 block text-sm font-medium text-stone-300">Pricing tier</span>
+            <div className="grid gap-3">
+              {plans.map((plan) => (
+                <button
+                  key={plan.id}
+                  type="button"
+                  onClick={() => onPlanChange(plan.id)}
+                  className={`rounded-2xl border p-4 text-left transition ${
+                    plan.id === selectedPlanId
+                      ? 'border-amber-400 bg-amber-500/10'
+                      : 'border-stone-700 bg-stone-950 hover:border-stone-500'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-semibold text-stone-100">{plan.name}</div>
+                      <div className="mt-1 text-xs text-stone-400">{plan.tagline}</div>
+                    </div>
+                    <div className="rounded-full bg-stone-900 px-3 py-1 text-xs font-semibold text-amber-300">
+                      {plan.price} {selectedToken?.symbol || 'USDC'}
+                    </div>
+                  </div>
+                  <div className="mt-3 text-xs text-stone-400">{plan.deliverable}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-stone-300">Network</span>
             <select
@@ -143,22 +193,6 @@ export function PaymentForm({
 
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-stone-300">Price</span>
-            <div className="flex gap-2">
-              {['0.5', '1', '2'].map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setAmount(value)}
-                  className={`rounded-full px-4 py-2 text-sm transition ${
-                    amount === value
-                      ? 'bg-amber-400 text-stone-950'
-                      : 'bg-stone-800 text-stone-200 hover:bg-stone-700'
-                  }`}
-                >
-                  {value} {selectedToken?.symbol || ''}
-                </button>
-              ))}
-            </div>
             <input
               type="number"
               step="0.000001"
