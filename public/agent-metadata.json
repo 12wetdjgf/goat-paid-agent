@@ -1,0 +1,6 @@
+{
+  "name": "goat_paid_agent",
+  "description": "A pay-per-use AI research agent with x402 payments on GOAT Network.",
+  "url": "https://goat-paid-agent.vercel.app",
+  "wallet": "0x70DF7CE612969eCF39724256246169cFB8eCf98F"
+}
